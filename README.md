@@ -4,10 +4,10 @@
 
 1. [Introduction](#introduction)
 2. [Installations](#installations)
-1. [Autopilot service](#autopilot-service)
-2. [Camera service](#camera-service)
-3. [LEDs service](#LEDs-service)
-4. [Docker](#docker)
+3. [Autopilot service](#autopilot-service)
+4. [Camera service](#camera-service)
+5. [LEDs service](#leds-service)
+6. [Docker](#docker)
 
 ## Introduction
 
@@ -18,6 +18,10 @@ The idea of collecting all these three services together, is to simulate the beh
 In order to run and contribute you must install Python 3.7. We recommend PyCharm as IDE for development.    
 Contributions must follow the contribution protocol that you will find in the main repo of the Drone Engineering Ecosystem.
 [![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-MainRepo-brightgreen.svg)](https://github.com/dronsEETAC/DroneEngineeringEcosystemDEE)
+
+To be able to create Docker images and upload them to Docker Hub, Docker Desktop needs to be downloaded, and an account in Docker Hub needs to be created:
+- [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Create account in Docker Hub](https://hub.docker.com/)
 
 # Autopilot service  
 
@@ -298,7 +302,8 @@ Command | Description | Payload
 
 ## Docker
 
-This service, once used in production mode, needs to be executed inside a Docker container, as is shown in the representation of the Drone Engineering Ecosystem. Because of that, when any modification is made to it, there's a need to generate a new image, and upload it to Docker Hub.
+All these services, once used in production mode, needs to be executed inside a single Docker container. Because of that, when any modification is made to any of them, there's a need to generate a new image, and upload it to Docker Hub.
+This image follows the structure indicated in the Dockerfile, collecting all the required dependencies and libraries, needed to execute all the processes of the services.
 
 The way of generating a new image of it is:
 
