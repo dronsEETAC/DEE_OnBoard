@@ -145,8 +145,8 @@ If a static video must be recorded in this waypoint, the service will publish th
 The autopilot will return to launch after the last waypoint is reached. 
 
 Note 8     
-The service acts similarly combining instruction _connect_ and _executeFlightPlan_, as this connection from Flutter MobileApp needs both configurations to the able to execute the flight plan sent.
-In this case, it also receives a object specifying the flight plan, with the similar indications as __Note 7__.
+The service acts similar to __Note 7__, but combining instruction _connect_ and _executeFlightPlan_, as this connection from Flutter MobileApp needs both configurations to the able to execute the flight plan sent.
+In this case, it also receives a object specifying the flight plan, with the following structure:
   
 ```
 [
@@ -201,36 +201,41 @@ The table bellow indicates all the commands that are accepted by the canera serv
 Command | Description | Payload | Answer | Answer payload
 --- | --- | --- | --- |---
 *takePicture* | provides a picture | No | *picture* | Yes (see Note 1)
-*takePictureFlightPlan* | provides a picture | No | *picture* | Yes (see Note 1)
-*takePictureInterval* | provides a picture every certain interval| No | *picture* | Yes (see Note 2)
-*startVideoMoving* | starts the recording of a video | No | *video* | Yes (see Note 3)
-*endVideoMoving* | end the recording of a video | No | No | No (see Note 4)
-*startStaticVideo* | records a static video | No | *video* | Yes (see Note 5)
-*saveMediaApi* | sends images and videos to ground APIREST module | No | No | Yes (see Note 6)
+*takePictureFlightPlan* | provides a picture | No | *picture* | Yes (see Note 2)
+*takePictureInterval* | provides a picture every certain interval| No | *picture* | Yes (see Note 3)
+*startVideoMoving* | starts the recording of a video | No | *video* | Yes (see Note 4)
+*endVideoMoving* | end the recording of a video | No | No | No (see Note 5)
+*startStaticVideo* | records a static video | No | *video* | Yes (see Note 6)
+*saveMediaApi* | sends images and videos to ground APIREST module | No | No | Yes (see Note 7)
 *startVideoStream* | starts sending pictures every 0.2 seconds | No | No | No
 *stopVideoStream* | stop sending pictures | No | No | No
 
-Note 1
+Note 1    
 Pictures are encoded in base64, as shown here:
 ```
 ret, frame = cap.read()
 if ret:
   _, image_buffer = cv.imencode(".jpg", frame)
   jpg_as_text = base64.b64encode(image_buffer)
-  client.publish(topic_to_publish, jpg_as_text)
 ```
 
-In order to save this picture, following process is executed:
+Note 2        
+Pictures are encoded in base64, and later saved in the directory given a random name, as shown here:
 ```
-random_number = generate_random_number(3)
-random_name = "picture_" + random_number + ".jpg"
-route = 'Pictures/' + random_name
-cv.imwrite(route, frame)
+ret = False
+for n in range(1, 20):
+    ret, frame = cap.read()
+_, image_buffer = cv.imencode('.jpg', frame)
+if ret:
+    random_number = generate_random_number(3)
+    random_name = "picture_" + random_number + ".jpg"
+    route = 'Pictures/' + random_name
+    cv.imwrite(route, frame)
 ```
 
 When the picture is taken, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/autopilotService/savePicture'*. 
 
-Note 2
+Note 3    
 The process is the same as in the case of a simple picture, but the way of saving it is different, changing the name of the file:
 ```
 random_number = generate_random_number(3)
@@ -241,29 +246,31 @@ cv.imwrite(route, frame)
 
 When the picture is taken, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/autopilotService/savePictureInterval'*. 
 
-Note 3
-Videos are encoded in base64, as shown here:
+Note 4    
+Videos are encoded in base64, and later saved in the directory given a random name, as shown here:
 ```
 fourcc = cv.VideoWriter_fourcc(*"mp4v")
+random_number = generate_random_number(3)
+random_name = "videoMoving_" + random_number + ".mp4"
+route = 'Videos/' + random_name
 output_video = cv.VideoWriter(route, fourcc, 30.0, (640, 480))
 while recording == True:
-  ret, frame = cap.read()
-  output_video.write(frame)
+    ret, frame = cap.read()
+    output_video.write(frame)
 cv.destroyAllWindows()
 output_video.release()
 ```
 
 When the video is recorded, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/autopilotService/saveVideo'*. 
 
-Note 4
+Note 5    
 Basically, it changes state of _recording_ variable state into False, to end the recording of a video.
 
-Note 5
-Videos are recorded in the same way as in __Note 3__, but in this case, _recording_ becomes False after a certain interval of time.
-
+Note 6    
+Videos are recorded in the same way as in __Note 4__, but in this case, _recording_ becomes False after a certain interval of time.
 When the video is recorded, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/autopilotService/saveVideo'*. 
 
-Note 6
+Note 7    
 Basically, once a flight has ended, gets all the images and videos taken and sends them one by one to the ground APIREST module, to have them available at any time in the Classpip server.
 
 # LEDs service
