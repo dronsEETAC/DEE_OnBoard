@@ -326,4 +326,6 @@ docker push “Docker Hub username”/”image name”:”versión”
 
 ## Docker documentation
 
+The following PDF file is developed with the intention of being a quick guide to the usage of Docker, with basic instructions which may be useful to know, how to install this software into a RPi, and several errors experiencied that may help new users if experiencing them.
 
+[DockerDocumentation.pdf] __Falta añadir el PDF, se está trabajando en ello__
