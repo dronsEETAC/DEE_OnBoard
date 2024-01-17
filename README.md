@@ -8,6 +8,7 @@
 4. [Camera service](#camera-service)
 5. [LEDs service](#leds-service)
 6. [Docker](#docker)
+7. [Docker documentation](#docker-documentation)
 
 ## Introduction
 
@@ -302,7 +303,7 @@ Command | Description | Payload
 
 ## Docker
 
-All these services, once used in production mode, needs to be executed inside a single Docker container. Because of that, when any modification is made to any of them, there's a need to generate a new image, and upload it to Docker Hub.
+All these services, once used in production mode, are going to be executed inside a single Docker container. Because of that, when any modification is made to any of them, there's a need to generate a new image, and upload it to Docker Hub.
 This image follows the structure indicated in the Dockerfile, collecting all the required dependencies and libraries, needed to execute all the processes of the services.
 
 The way of generating a new image of it is:
@@ -322,3 +323,7 @@ __Once this image is created__, it can be found inside the Docker Desktop applic
 ```
 docker push “Docker Hub username”/”image name”:”versión”
 ```
+
+## Docker documentation
+
+
