@@ -1,20 +1,33 @@
-# OnBoard services
+# On Board
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
+1. [General description](#general-description)
 2. [Installations](#installations)
-3. [Autopilot service](#autopilot-service)
-4. [Camera service](#camera-service)
-5. [LEDs service](#leds-service)
-6. [Docker](#docker)
-7. [Docker documentation](#docker-documentation)
+3. [Operation modes](#operation-modes)
+4. [Docker](#docker)
+5. [Docker documentation](#docker-documentation)
+6. [Deploying the containers](#deploying-the-containers)
 
-## Introduction
+## 1. General description
+The modules in this block run in the on board computer (Raspberry Pi) to control different devices in the drone platform (autopilot, camera, leds, etc.) and to save information asocciated to its execution (air backend). All on board modules are developed in Python. 
+Each of the modules in this block has a GitHub repo where you can find the code together with a description, installation instructions and demos. These are the repos:
+* *Autopilot service*:
+[![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-AutopilotService-brightgreen.svg)](https://github.com/dronsEETAC/DroneAutopilotDEE) an on-board module that controls the autopilot to execute the commands coming from other modules (arm, takeoff, go to position, etc.).    
 
-The idea of collecting all these three services together, is to simulate the behavior that they will experience inside the Docker container executed inside the drone. When explaining each of them, it will be detailed the different actions they can process, and the processes they can execute.
+* *Camera service*:
+[![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-CameraService-brightgreen.svg)](https://github.com/dronsEETAC/CameraControllerDEE) an on-board module that controls the on-board camera to execute the commands coming from other modules (take a picture, get the video stream, etc.)       
+   
+* *LEDs service*:
+[![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-LEDsService-brightgreen.svg)](https://github.com/dronsEETAC/LEDsControllerDEE) an on-board module that controls the LEDs of the drone platform to inform of the status of the drone platform, or a servo installed in the platform, as required by other modules.  
+    
+* *Monitor*:
+[![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-Monitor-brightgreen.svg)](https://github.com/dronsEETAC/MonitorDEE) records on board data for future analysis (for instance, all the messages send through the brokers.
 
-## Installations
+* *Air Backend*:
+[![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-Monitor-brightgreen.svg)](https://github.com/JordiLlaveria/AirAPIRESTDEE) saves flight information while the drone is executing a planned flight
+
+## 2. Installations
 
 In order to run and contribute you must install Python 3.7. We recommend PyCharm as IDE for development.    
 Contributions must follow the contribution protocol that you will find in the main repo of the Drone Engineering Ecosystem.
@@ -23,297 +36,47 @@ Contributions must follow the contribution protocol that you will find in the ma
 To be able to create Docker images and upload them to Docker Hub, Docker Desktop needs to be downloaded, and an account in Docker Hub needs to be created:
 - [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [Create account in Docker Hub](https://hub.docker.com/)
+- 
+## 3. Operation modes
+All services in this block can be run in simulation mode and also in production mode. To use the service in simulation mode, clone the repo in your computer and install de requirements. Be also sure that you have running the internal broker at "localhost:1884". When running the service you must specify the communication and operation mode and also which broker must be used as external broker. To do that you must edit the run/debug configuration in PyCharm, as shown in the image, in order to pass the required arguments to the script implementing the service. At least two parameters are required: connection_mode (global or local) and operation_mode (simulation or production). In case of global communication mode, a third argument is requiered indicating the external broker to be used. The different options for ths third argument are shown in this table:
 
-# Autopilot service  
+options for external broker (third argument) | Comments    
+--- | --- 
+hivemq | broker.hivemq.com:8000 with websockets 
+hivemq_cert | broker.hivemq.com:8884 with secure websockets  
+classpip-cred |classpip.upc.edu:8000 with websockets and credentials (in the fourth and fifth arguments)   
+classpip_cert | classpip.upc.edu:8883 with secure websockets and credentials (in the fourth and fifth arguments)   
+localhost | localhost:8000 with websockets   
+localhost_cert | localhost:8883 with secure websockets
 
-## Introduction
+In case the external broker requieres credentials, two additional parameters must be includes (username and password). The figure shows and example where the external broker does not requires credentials.   
+![runConfig](https://github.com/dronsEETAC/DEE_OnBoard/assets/100842082/09c20edf-552f-436a-87bd-90192d75a299)
 
-The autopilot service is an on-board module that controls the operation of the flight controller, as required by the rest of modules in the Drone Engineering Ecosystem.   
-Dashboard or mobile applications will requiere the autopilot service to connect to the flight controller, to arm the drone, take-off, go to a certain position or move in a given direction, land, stop, etc. See the table bellow for a complete list of commands that can be accepted by the autopilot service in its current version.
+## 4. Docker
 
-## Commands
-In order to send a command to the autopilot service, a module must publish a message in the external (or internal) broker. The topic of the message must be in the form:
-```
-"XXX/autopilotService/YYY"
-```
-where XXX is the name of the module requiring the service and YYY is the name of the service that is required. Oviously, some of the commands may require additional data that must be included in the payload of the message to be published. 
-In some cases, after completing the service requiered the autopilot service publish a message as an answer. The topic of the answer has the format:
-```
-"autopilotService/XXX/ZZZ"
-```
-where XXX is the name of the module requiring the service and ZZZ is the answer. The message can include data in the message payload.
+The usage of Docker in the case of the administration of the onboard services can be seen complex at the first time, but the structure which is followed is the easiest one at the time of executing the different containers and communicating all of them.
 
-The table bellow indicates all the commands that are accepted by the autopilot service in the current version.   
+Among all the onboard services, and the air backend, three different images are going to be created:
+1. The first one, involves Autopilot Service, Camera Service, LEDs Service and boot.py
+2. The second one, takes the Monitor Service
+3. The last one, is the image which involves the newest implementation among the on board structure, the air backend
 
-Command | Description | Payload | Answer | Answer payload
---- | --- | --- | --- |--- 
-*connect* | connect with the simulator or the flight controller depending on the operation mode | No | No (see Note 1) | No
-*armDrone* | arms the drone (either simulated or real) | No | NO (see Note 2) | No 
-*takeOff* | get the drone take off to reach and altitude of 5 meters | No | No (see Note 3)  | No 
-*returnToLaunch* | go to launch position |No  | No (see Note 4) | No    
-*land* | the dron will land |No  | No (see Note 5) | No     
-*disarmDrone* | disarm the drone |No  |  No (see Note 6) | No 
-*go* | move in certain direction |"North", "South", "East", "West", "NorthWest", "NorthEast", "SouthWest", "SouthEast" , "Stop"  | No | No 
-*disconnect* | disconnect from the simulator or the flight controller depending on the operation mode | No | NO (see Note 1) | No
-*executeFlightPlan* | execute the flight plan received | See Note 7 | see Note 7 | see Note 7
-*executeFlightPlanMobileApp* | execute the flight plan received from Mobile App | See Note 8 | see Note 8 | see Note 8
-*savePicture* | saves a picture in the air APIREST module| "name_picture" | See Note 9 | See Note 9 
-*savePictureInterval* | saves a picture, taken every certain interval, in the air APIREST module | "name_picture"  | See Note 10 | See Note 10
-*saveVideo* | saves a video in the air APIREST module | "name_video" | See Note 11 | See Note 11
-*saveMediaApi* | when the drone has landed after a planned flight, sends its associated information to ground APIREST module | No | See Note 12 | See Note 12
+In order to create both image from the second and the their case, they both can be created directly using the GitHub repository and all the information it contains, as the structure based on the Dockerfile, and the .py files associated is already made following Docker structure.
 
+The case were several changes need to be made is in the first image, the one that involves most of the services, and it is needed to collect in a single directory the following files:
+1. requierements.txt and Dockerfile files from this repository
+2. AutopilotService.py file from Autopilot Service repository
+3. CameraService.py file from Camera Service repository
+4. LEDsService.py file from LEDs Service repository
+5. boot.py file from DroneEngineeringEcosystem repository: [DEE repository](https://github.com/dronsEETAC/DroneEngineeringEcosystemDEE)
 
-Note 1    
-When the autopilot is connected the service will start sending telemetry_info packets every 250 miliseconds. The service will stop sending 
-telemetry_info packets as soon as a *disconnect* command is received. This is an example of telemetry_info packet:
-
-```
-{
-    'lat': 41.124567,
-    'lon': 1.9889145,
-    'heading': 270,
-    'groundSpeed': 4.27,
-    'altitude': 6.78,
-    'battery': 80,
-    'state': state
-}
-
-```
-The packet includes the state of the autopilot so that the module that receives the packet can take decisions (for instance, change color of the buttons).   
-
-These are the different values for the state:
-*'connected'*  
-*'arming'*  
-*'armed'*   
-*'disarmed'*    
-*'takingOff'*      
-*'flying'*   
-*'returningHome'*     
-*'landing'*    
-*'onHearth'*    
-
-Note 2    
-The state will change to *arming* and then to *armed* as soon as the autopilot is armed.    
-      
-Note 3    
-The state will change to *takingOff* and then to *flying* as soon as the autopilot reaches 5 meters of altitude.  
-   
-Note 4    
-The state will change to *returningHome* and then to *onHearth* as soon as the autopilot in on hearth.    
-   
-Note 5    
-The state will change to *landing* and then to *onHearth* as soon as the autopilot in on hearth.    
-   
-Note 6    
-The state will change to *disarmed*.   
-
-Note 7     
-The service must receive a json object specifying the flight plan with indications whether a picture must be taken, or a video must be recorded, when reaching a waypoint. This is an example of such json object:    
-
-```
-[
-  {
-    'lat': 41.124567,
-    'lon': 1.9889145,
-    'takePic': True or False,
-    'videoStart': True or False,
-    'videoStop': True or False,
-    'staticVideo': True or False
-  },
-  {
-    'lat': 41.124567,
-    'lon': 1.9889145,
-    'takePic': True or False,
-    'videoStart': True or False,
-    'videoStop': True or False,
-    'staticVideo': True or False
-  },
-  ....
-]
-```
-
-Also, __the id that identifies the flight plan and the flight executed are also received__, related with saving future information in the APIREST module.
-
-The service will execute the flight plan, changing the state accordingly (*'arming'*, *'armed'*, *'takingOff'*, and so on until *'onHearth'*).    
-When arrived to the next waypoint the service will publish this message: *'XXXX/autopilotService/waypointReached'*,, being XXXX the module requesting the service. The topic of the message is a json object containing *'lat'* and *'lon'* of the reached waypoint. 
-
-If a picture must be taken in this waypoint, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/cameraService/takePicture'*. 
-If a video must be started in this waypoint, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/cameraService/startVideoMoving'*. 
-If a video must be ended in this waypoint, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/cameraService/endVideoMoving*.
-If a static video must be recorded in this waypoint, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/cameraService/startStaticVideo'*.
-
-The autopilot will return to launch after the last waypoint is reached. 
-
-Note 8     
-The service acts similar to __Note 7__, but combining instruction _connect_ and _executeFlightPlan_, as this connection from Flutter MobileApp needs both configurations to the able to execute the flight plan sent.
-In this case, it also receives a object specifying the flight plan, with the following structure:
-  
-```
-[
-  {
-    'lat': 41.124567,
-    'lon': 1.9889145,
-    'takePic': True or False,
-    'movingVideo': True or False,
-    'staticVideo': True or False
-  }
-  ....
-]
-```
-
-Note 9     
-Asked by the camera when it has taken a picture, saves it into de air APIREST module uploading the flight which is being executed.  
-Sends a request to the air APIREST module (/add_picture) to update the flight executed.
-
-Note 10     
-Asked by the camera when it has taken a picture after a certain interval, saves it into de air APIREST module uploading the flight which is being executed.  
-Sends a request to the air APIREST module (/add_picture) to update the flight executed.
-
-Note 11     
-Asked by the camera when it has recorded a video, saves it into de air APIREST module uploading the flight which is being executed.  
-Sends a request to the air APIREST module (/add_video) to update the flight executed.
-
-Note 12     
-When a flight has ended, and being requested from the Dashboard application, sends the flight, with all its corresponding information, to the ground APIREST module.  
-Sends a request to the __ground__ APIREST module (/add_flight) to save the flight ended.
-
-In order to communicate the the camera service that this information needs to be sent, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/cameraService/saveMediaApi'*. 
-
-# Camera service
-## Introduction
-The camera service is an on-board module that provides images and videos to the rest of modules of the ecosystem, as required.
-Dashboard or mobile applications will requiere the camera service to provide a single picturem, to record a video or to stard/stop a video stream.
-
-## Commands
-In order to send a command to the camera service, a module must publish a message in the external (or internal) broker. The topic of the message must be in the form:
-```
-"XXX/cameraService/YYY"
-```
-where XXX is the name of the module requiring the service and YYY is the name of the service that is required. Some of the commands may require additional data that must be include in the payload of the message to be published.
-In some cases, after completing the service requiered the camera service publish a message as an answer. The topic of the answer has the format:
-```
-"cameraService/XXX/ZZZ"
-```
-where XXX is the name of the module requiring the service and ZZZ is the answer. The message can include data in the message payload.
-
-The table bellow indicates all the commands that are accepted by the canera service in the current version.
-
-Command | Description | Payload | Answer | Answer payload
---- | --- | --- | --- |---
-*takePicture* | provides a picture | No | *picture* | Yes (see Note 1)
-*takePictureFlightPlan* | provides a picture | No | *picture* | Yes (see Note 2)
-*takePictureInterval* | provides a picture every certain interval| No | *picture* | Yes (see Note 3)
-*startVideoMoving* | starts the recording of a video | No | *video* | Yes (see Note 4)
-*endVideoMoving* | end the recording of a video | No | No | No (see Note 5)
-*startStaticVideo* | records a static video | No | *video* | Yes (see Note 6)
-*saveMediaApi* | sends images and videos to ground APIREST module | No | No | Yes (see Note 7)
-*startVideoStream* | starts sending pictures every 0.2 seconds | No | No | No
-*stopVideoStream* | stop sending pictures | No | No | No
-
-Note 1    
-Pictures are encoded in base64, as shown here:
-```
-ret, frame = cap.read()
-if ret:
-  _, image_buffer = cv.imencode(".jpg", frame)
-  jpg_as_text = base64.b64encode(image_buffer)
-```
-
-Note 2        
-Pictures are encoded in base64, and later saved in the directory given a random name, as shown here:
-```
-ret = False
-for n in range(1, 20):
-    ret, frame = cap.read()
-_, image_buffer = cv.imencode('.jpg', frame)
-if ret:
-    random_number = generate_random_number(3)
-    random_name = "picture_" + random_number + ".jpg"
-    route = 'Pictures/' + random_name
-    cv.imwrite(route, frame)
-```
-
-When the picture is taken, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/autopilotService/savePicture'*. 
-
-Note 3    
-The process is the same as in the case of a simple picture, but the way of saving it is different, changing the name of the file:
-```
-random_number = generate_random_number(3)
-random_name = "pictureInterval_" + random_number + ".jpg"
-route = 'Pictures/' + random_name
-cv.imwrite(route, frame)
-```
-
-When the picture is taken, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/autopilotService/savePictureInterval'*. 
-
-Note 4    
-Videos are encoded in base64, and later saved in the directory given a random name, as shown here:
-```
-fourcc = cv.VideoWriter_fourcc(*"mp4v")
-random_number = generate_random_number(3)
-random_name = "videoMoving_" + random_number + ".mp4"
-route = 'Videos/' + random_name
-output_video = cv.VideoWriter(route, fourcc, 30.0, (640, 480))
-while recording == True:
-    ret, frame = cap.read()
-    output_video.write(frame)
-cv.destroyAllWindows()
-output_video.release()
-```
-
-When the video is recorded, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/autopilotService/saveVideo'*. 
-
-Note 5    
-Basically, it changes state of _recording_ variable state into False, to end the recording of a video.
-
-Note 6    
-Videos are recorded in the same way as in __Note 4__, but in this case, _recording_ becomes False after a certain interval of time.
-When the video is recorded, the service will publish this message IN THE INTERNAL BROKER: *'XXXX/autopilotService/saveVideo'*. 
-
-Note 7    
-Basically, once a flight has ended, gets all the images and videos taken and sends them one by one to the ground APIREST module, to have them available at any time in the Classpip server.
-
-# LEDs service
-
-## Introduction
-
-The LEDs service is an on-board module that controls the LEDs and the servo installed in the drone platform, as required by the rest of modules in the Drone Engineering Ecosystem.
-Dashboard or mobile applications will requiere the LEDs service to light certain LED with a given RGB color of to move the servo to drop and object.
-
-## Commands
-In order to send a command to the LEDs service, a module must publish a message in the external (or internal) broker. The topic of the message must be in the form:
-```
-"XXX/LEDsService/YYY"
-```
-where XXX is the name of the module requiring the service and YYY is the name of the service that is required. Oviously, some of the commands include data that must be includes in the payload of the message to be published.
-
-The table bellow indicates all the commands that are accepted by the LEDs service in the current version.
-
-Command | Description | Payload
---- | --- | ---
-*startLEDsSequence* | start a clyclic sequence: red, green, yellow | No
-*stopLEDsSequence* | stops the sequence | No
-*LEDsSequenceForNSeconds* | runs the cyclic sequience during a certain number of seconds | the number of seconds as string
-*red* | put in red the first led for 5 seconds | No
-*green* | put in green the second led for 5 seconds | No
-*blue* | put in lue the third led for 5 seconds | No
-*drop* | move the servo to drop the object | No
-*reset* | move the servo to its initial position | No
-*bluei* | fix the first led to blue | No
-*redi* | fix the first led to red | No
-*yellowi* | fix the first led to yellow | No
-*greeni* | fix the first led to green | No
-*pinki* | fix the first led to pink | No
-*whitei* | fix the first led to white | No
-*blacki* | fix the first led to black | No
-*clear* | clear the first led | No
-
-## Docker
+Once all these files are collected into a single directory, downloading each one of them from their corresponding repository, they have the correct organisation to create the image of services which involves all of them, following instructions which will be detailed in the next chapter.
 
 All these services, once used in production mode, are going to be executed inside a single Docker container. Because of that, when any modification is made to any of them, there's a need to generate a new image, and upload it to Docker Hub.
+
 This image follows the structure indicated in the Dockerfile, collecting all the required dependencies and libraries, needed to execute all the processes of the services.
 
-The way of generating a new image of it is:
+The way of generating an image is executing the following instruction, inside the directory where Dockerfile is found:
 
 ```
 docker build --platform linux/arm64/v8 -t “Docker Hub username”/”image name”:”version” .
@@ -325,14 +88,36 @@ Being an example:
 docker build --platform linux/arm64/v8 -t jordillaveria/services_arm64:v11 .
 ```
 
-__Once this image is created__, it can be found inside the Docker Desktop application, and at this moment, it can be pushed into Docker Hub repository, in order to be available for download from the RPi:
+__Once the image is created locally__, it can be found inside the Docker Desktop application, and at this moment, it can be pushed into Docker Hub repository, in order to be available for download from the RPi:
 
 ```
 docker push “Docker Hub username”/”image name”:”versión”
 ```
 
-## Docker documentation
+## 5. Docker documentation
 
-The following PDF file is developed with the intention of being a quick guide to the usage of Docker, with basic instructions which may be useful to know, how to install this software into a RPi, and several errors experiencied that may help new users if experiencing them.
+The following PDF file is developed with the intention of being a quick guide to the usage of Docker, with basic instructions which may be useful to know, how to install this software into a RPi, and several errors experienced that may help new users if experiencing them.
 
-[DockerDocumentation.pdf] __Falta añadir el PDF, se está trabajando en ello__
+[DockerDocumentation.pdf](https://github.com/JordiLlaveria/OnBoardServicesDEE/blob/manager/DockerIntroduction.pdf)
+
+## 6. Deploying the containers
+
+When all this three images are created, and we will supose that these process is going to be executed inside de RPi with both Docker and Docker Compose tools downloaded, following the previous documentation, its time to deploy the corresponding containers, to be able to use the services all of them contain.
+
+For ongoing this process, the docker-compose.yml file found in this repository needs to be added to the RPi, either transfering it through PFSTP, or creating it manually and indicating all the configurations needs.
+
+At the moment when this file is found inside the RPi, inside the directory where it is found, the following command can be executed to deploy all the containers needed, which use as a reference the images already created:
+
+```
+docker compose up
+```
+
+A parenthesis needs to be made, as depending on the version of Docker installed, the previous command, and the following ones, can be written as __docker compose__ or as __docker-compose__, and the quickest way to know which one is the corresponding to the version used, is trying any of them and see if Docker does not report any error.
+
+This instruction downloads all the required images from Docker Hub, creates all the indicated containers in the docker-compose.yml, and deploys them to be available as soon as possible for the user, without needing any additional instruction.
+
+Despite that, and to be able to deal with the usage and Docker, the following instructions are useful at the time of using Docker:
+- docker compose up -d: same instruction as before, but in this case the terminal does not report any log, allowing the user to continue using it
+- docker compose stop: stops all the containers
+- docker compose down: stops and eliminates all the containers collected inside a Docker Compose file
+- docker ps -a: show all the containers created, either in "UP" or "DOWN" state
