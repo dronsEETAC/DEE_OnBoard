@@ -10,7 +10,7 @@
 6. [Deploying the containers](#deploying-the-containers)
 
 ## General description
-The modules in this block run in the on board computer (Raspberry Pi) to control different devices in the drone platform (autopilot, camera, leds, etc.) and to save information asocciated to its execution (air backend). All on board modules are developed in Python. 
+The modules in this block run in the on board computer (Raspberry Pi) to control different devices in the drone platform (autopilot, camera, leds, etc.) and to save information associated to its execution (air backend). All on board modules are developed in Python. 
 Each of the modules in this block has a GitHub repo where you can find the code together with a description, installation instructions and demos. These are the repos:
 * *Autopilot service*:
 [![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-AutopilotService-brightgreen.svg)](https://github.com/dronsEETAC/DroneAutopilotDEE) an on-board module that controls the autopilot to execute the commands coming from other modules (arm, takeoff, go to position, etc.).    
@@ -36,7 +36,7 @@ Contributions must follow the contribution protocol that you will find in the ma
 To be able to create Docker images and upload them to Docker Hub, Docker Desktop needs to be downloaded, and an account in Docker Hub needs to be created:
 - [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [Create account in Docker Hub](https://hub.docker.com/)
-- 
+
 ## Operation modes
 All services in this block can be run in simulation mode and also in production mode. To use the service in simulation mode, clone the repo in your computer and install de requirements. Be also sure that you have running the internal broker at "localhost:1884". When running the service you must specify the communication and operation mode and also which broker must be used as external broker. To do that you must edit the run/debug configuration in PyCharm, as shown in the image, in order to pass the required arguments to the script implementing the service. At least two parameters are required: connection_mode (global or local) and operation_mode (simulation or production). In case of global communication mode, a third argument is requiered indicating the external broker to be used. The different options for ths third argument are shown in this table:
 
@@ -54,29 +54,29 @@ In case the external broker requieres credentials, two additional parameters mus
 
 ## Docker
 
-The usage of Docker in the case of the administration of the onboard services can be seen complex at the first time, but the structure which is followed is the easiest one at the time of executing the different containers and communicating all of them.
+The usage of Docker in the case of the administration of onboard services can be seen as complex at the first time, but the structure which is followed is the easiest one at the time of executing the different containers and communicating with all of them.
 
 Among all the onboard services, and the air backend, three different images are going to be created:
 1. The first one, involves Autopilot Service, Camera Service, LEDs Service and boot.py
 2. The second one, takes the Monitor Service
-3. The last one, is the image which involves the newest implementation among the on board structure, the air backend
+3. The last one, is the image which involves the newest implementation of the onboard structure, the air backend
 
-In order to create both image from the second and the their case, they both can be created directly using the GitHub repository and all the information it contains, as the structure based on the Dockerfile, and the .py files associated is already made following Docker structure.
+In order to create both images from the second and the third case, they can both be created directly using the GitHub repository and all the information it contains, as the structure based on the Dockerfile, and the .py files associated are already made following the Docker structure.
 
-The case were several changes need to be made is in the first image, the one that involves most of the services, and it is needed to collect in a single directory the following files:
+The case where several changes need to be made is in the first image, the one that involves most of the services, and it is needed to collect in a single directory the following files:
 1. requierements.txt and Dockerfile files from this repository
-2. AutopilotService.py file from Autopilot Service repository
-3. CameraService.py file from Camera Service repository
-4. LEDsService.py file from LEDs Service repository
-5. boot.py file from DroneEngineeringEcosystem repository: [DEE repository](https://github.com/dronsEETAC/DroneEngineeringEcosystemDEE)
+2. AutopilotService.py file from the Autopilot Service repository
+3. CameraService.py file from the Camera Service repository
+4. LEDsService.py file from the LEDs Service repository
+5. boot.py file from the DroneEngineeringEcosystem repository: [DEE repository](https://github.com/dronsEETAC/DroneEngineeringEcosystemDEE)
 
-Once all these files are collected into a single directory, downloading each one of them from their corresponding repository, they have the correct organisation to create the image of services which involves all of them, following instructions which will be detailed in the next chapter.
+Once all these files are collected into a single directory and each one of them is downloaded from their corresponding repository, they have the correct organization to create the image of services which involves all of them, following instructions which will be detailed in the next chapter.
 
 All these services, once used in production mode, are going to be executed inside a single Docker container. Because of that, when any modification is made to any of them, there's a need to generate a new image, and upload it to Docker Hub.
 
 This image follows the structure indicated in the Dockerfile, collecting all the required dependencies and libraries, needed to execute all the processes of the services.
 
-The way of generating an image is executing the following instruction, inside the directory where Dockerfile is found:
+The way to generate an image is by executing the following instruction, inside the directory where Dockerfile is found:
 
 ```
 docker build --platform linux/arm64/v8 -t “Docker Hub username”/”image name”:”version” .
@@ -96,15 +96,15 @@ docker push “Docker Hub username”/”image name”:”versión”
 
 ## Docker documentation
 
-The following PDF file is developed with the intention of being a quick guide to the usage of Docker, with basic instructions which may be useful to know, how to install this software into a RPi, and several errors experienced that may help new users if experiencing them.
+The following PDF file was developed with the intention of being a quick guide to the usage of Docker, with basic instructions that may be useful to know, how to install this software into a RPi, and several errors experienced that may help new users if experiencing them.
 
 [DockerDocumentation.pdf](https://github.com/JordiLlaveria/OnBoardServicesDEE/blob/manager/DockerIntroduction.pdf)
 
 ## Deploying the containers
 
-When all this three images are created, and we will supose that these process is going to be executed inside de RPi with both Docker and Docker Compose tools downloaded, following the previous documentation, its time to deploy the corresponding containers, to be able to use the services all of them contain.
+When all these three images are created, and we will suppose that these processes are going to be executed inside de RPi with both Docker and Docker Compose tools downloaded, following the previous documentation, it's time to deploy the corresponding containers, to be able to use the services all of them contain.
 
-For ongoing this process, the docker-compose.yml file found in this repository needs to be added to the RPi, either transfering it through PFSTP, or creating it manually and indicating all the configurations needs.
+For ongoing this process to continue, the docker-compose.yml file found in this repository needs to be added to the RPi, either by transferring it through PFSTP, or creating it manually and indicating all the configurations needed.
 
 At the moment when this file is found inside the RPi, inside the directory where it is found, the following command can be executed to deploy all the containers needed, which use as a reference the images already created:
 
