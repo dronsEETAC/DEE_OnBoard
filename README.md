@@ -9,7 +9,7 @@
 5. [Docker documentation](#docker-documentation)
 6. [Deploying the containers](#deploying-the-containers)
 
-## 1. General description
+## General description
 The modules in this block run in the on board computer (Raspberry Pi) to control different devices in the drone platform (autopilot, camera, leds, etc.) and to save information asocciated to its execution (air backend). All on board modules are developed in Python. 
 Each of the modules in this block has a GitHub repo where you can find the code together with a description, installation instructions and demos. These are the repos:
 * *Autopilot service*:
@@ -27,7 +27,7 @@ Each of the modules in this block has a GitHub repo where you can find the code 
 * *Air Backend*:
 [![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-Monitor-brightgreen.svg)](https://github.com/JordiLlaveria/AirAPIRESTDEE) saves flight information while the drone is executing a planned flight
 
-## 2. Installations
+## Installations
 
 In order to run and contribute you must install Python 3.7. We recommend PyCharm as IDE for development.    
 Contributions must follow the contribution protocol that you will find in the main repo of the Drone Engineering Ecosystem.
@@ -37,7 +37,7 @@ To be able to create Docker images and upload them to Docker Hub, Docker Desktop
 - [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [Create account in Docker Hub](https://hub.docker.com/)
 - 
-## 3. Operation modes
+## Operation modes
 All services in this block can be run in simulation mode and also in production mode. To use the service in simulation mode, clone the repo in your computer and install de requirements. Be also sure that you have running the internal broker at "localhost:1884". When running the service you must specify the communication and operation mode and also which broker must be used as external broker. To do that you must edit the run/debug configuration in PyCharm, as shown in the image, in order to pass the required arguments to the script implementing the service. At least two parameters are required: connection_mode (global or local) and operation_mode (simulation or production). In case of global communication mode, a third argument is requiered indicating the external broker to be used. The different options for ths third argument are shown in this table:
 
 options for external broker (third argument) | Comments    
@@ -52,7 +52,7 @@ localhost_cert | localhost:8883 with secure websockets
 In case the external broker requieres credentials, two additional parameters must be includes (username and password). The figure shows and example where the external broker does not requires credentials.   
 ![runConfig](https://github.com/dronsEETAC/DEE_OnBoard/assets/100842082/09c20edf-552f-436a-87bd-90192d75a299)
 
-## 4. Docker
+## Docker
 
 The usage of Docker in the case of the administration of the onboard services can be seen complex at the first time, but the structure which is followed is the easiest one at the time of executing the different containers and communicating all of them.
 
@@ -94,13 +94,13 @@ __Once the image is created locally__, it can be found inside the Docker Desktop
 docker push “Docker Hub username”/”image name”:”versión”
 ```
 
-## 5. Docker documentation
+## Docker documentation
 
 The following PDF file is developed with the intention of being a quick guide to the usage of Docker, with basic instructions which may be useful to know, how to install this software into a RPi, and several errors experienced that may help new users if experiencing them.
 
 [DockerDocumentation.pdf](https://github.com/JordiLlaveria/OnBoardServicesDEE/blob/manager/DockerIntroduction.pdf)
 
-## 6. Deploying the containers
+## Deploying the containers
 
 When all this three images are created, and we will supose that these process is going to be executed inside de RPi with both Docker and Docker Compose tools downloaded, following the previous documentation, its time to deploy the corresponding containers, to be able to use the services all of them contain.
 
