@@ -59,7 +59,9 @@ The usage of Docker in the case of the administration of onboard services can be
 Among all the onboard services, and the air backend, three different images are going to be created:
 1. The first one, involves Autopilot Service, Camera Service, LEDs Service and boot.py
 2. The second one, takes the Monitor Service
-3. The last one, is the image which involves the newest implementation of the onboard structure, the air backend
+3. The last one, is the image which involves the newest implementation of the onboard structure, the REST API from the air backend
+
+![dockerStructure](https://github.com/JordiLlaveria/OnBoardServicesDEE/blob/manager/EstructuraDocker.PNG)
 
 In order to create both images from the second and the third case, they can both be created directly using the GitHub repository and all the information it contains, as the structure based on the Dockerfile, and the .py files associated are already made following the Docker structure.
 
