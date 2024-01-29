@@ -1,0 +1,89 @@
+version: "3.3"
+services:
+  monitor:
+    #build: ./MonitorDEE
+    image: jordillaveria/monitor_arm64:v2
+    # Connection can be global, local or classpip
+    command: ["python3", "monitor.py", "global"]
+    # command: ["python3", "monitor.py", "classpip"]
+    container_name: monitor
+    networks:
+      main:
+        ipv4_address: 192.168.208.3
+    depends_on:
+      - mosquitto
+    external_links:
+      - mosquitto
+
+  services:
+    #build: ./DroneEngineeringEcosystemDEE
+    image: jordillaveria/services_arm64:v11
+    privileged: true
+    container_name: services
+    command: ["python3", "boot.py", "broker.hivemq.com"]
+    #command: ["python3", "boot.py", "classpip.upc.edu", "dronsEETAC", "mimara1456."]
+    #command: ["tail", "-f", "/dev/null"]
+    networks:
+      main:
+        ipv4_address: 192.168.208.4
+    depends_on:
+      - mosquitto
+    external_links:
+      - mosquitto
+    devices:
+      - /dev/video0:/dev/video0
+      - /dev/ttyS0:/dev/ttyS0
+      - /dev/gpiomem:/dev/gpiomem
+  
+  restapi:
+    image: jordillaveria/restapi_arm64:v3
+    restart: always
+    container_name: restapi
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]
+    ports:
+      - "9000:9000"
+    networks:
+      main:
+        ipv4_address: 192.168.208.6
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.5
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "1884:1884"
+      - "8000:8000"
+    volumes:
+      - ./config:/mosquitto/config
+      - ./data:/mosquitto/data
+      - ./log:/mosquitto/log
+    networks:
+      main:
+        ipv4_address: 192.168.208.2
+
+  mongo:
+    image: mongo:bionic
+    container_name: mongo
+    restart: always
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      main:
+        ipv4_address: 192.168.208.5
+    command: mongod --bind_ip_all
+
+networks:
+  main:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.208.0/20
+
+volumes:
+  mongodb_data:
+
+secrets:
+  dockerhub_username:
+    external: true
+  dockerhub_password:
+    external: true
