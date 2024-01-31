@@ -191,12 +191,14 @@ def start_interval(seconds, origin):
     timer.start()
 
 
-def executeFlightPlan(waypoints_json, flight_id, flightplan_id_ground, application):
+def executeFlightPlan(waypoints_json, application):
     global vehicle
     global internal_client, external_client
     global sending_topic
     global state
     global waypointImage
+    global flightplan_id_ground
+    global flight_id
     global waypointStartVideo
     global waypointEndVideo
     global latWaypointStart
@@ -215,13 +217,10 @@ def executeFlightPlan(waypoints_json, flight_id, flightplan_id_ground, applicati
         waypoints = waypoints_json
 
     response_json = requests.get('http://192.168.208.6:9000/get_flightplan_id/' + flight_id).json()
-    #response_json = requests.get('http://127.0.0.1:9000/get_flightplan_id/' + flight_id).json()
     flightplan_id = response_json["FlightPlan id"]
     response_json = requests.get('http://192.168.208.6:9000/get_pic_interval/' + flightplan_id).json()
-    #response_json = requests.get('http://127.0.0.1:9000/get_pic_interval/' + flightplan_id).json()
     pic_Interval = response_json["Pic interval"]
     response_json = requests.get('http://192.168.208.6:9000/get_vid_interval/' + flightplan_id).json()
-    #response_json = requests.get('http://127.0.0.1:9000/get_vid_interval/' + flightplan_id).json()
     video_Interval = response_json["Vid interval"]
     waypointStartVideo = 1 # Añadido para evitar tener error de no asociación del valor
     waypointEndVideo = 1
@@ -329,36 +328,26 @@ def executeFlightPlan(waypoints_json, flight_id, flightplan_id_ground, applicati
         time.sleep(1)
     state = 'onHearth'
 
-    print("Asking the camera to send the media to the api")
-    # response_json = requests.get('http://127.0.0.1:9000/get_flight/' + flight_id).json()
-    response_json = requests.get('http://192.168.208.6:9000/get_flight/' + flight_id).json()
-    dataFlight = {
-        'Date': response_json["Date"],
-        'startTime': response_json["startTime"],
-        'GeofenceActive': response_json["GeofenceActive"],
-        'Flightplan': flightplan_id_ground,
-        'NumPics': response_json["NumPics"],
-        'Pictures': response_json["Pictures"],
-        'NumVids': response_json["NumVids"],
-        'Videos': response_json["Videos"]
-    }
-    """
-    data = {
-        "FlightPlanid": flightplan_id_ground
-    }
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post('http://147.83.249.79:8105/add_flight/'+flight_id, data=json.dumps(data), headers=headers)
-    #internal_client.publish("autopilotService/cameraService/getResultFlight", flight_id)
-    """
-    data = json.dumps(dataFlight)
-    headers = {'Content-Type': 'application/json'}
-    #response = requests.post('http://127.0.0.1:9000/add_flight', data=data, headers=headers)
-    response = requests.post('http://147.83.249.79:8105/add_flight', data=data,headers=headers)
-    internal_client.publish("autopilotService/cameraService/saveMediaApi", flight_id)
-
     if application == "mobileApp":
         external_client.publish("autopilotService/mobileApp/flightEnded")
         print("Sent to the mobileApp that the flight is ended")
+
+        # In the case of Mobile App, information is saved automatically in ground backend as soon as the flight ends
+        response_json = requests.get('http://192.168.208.6:9000/get_flight/' + flight_id).json()
+        dataFlight = {
+            'Date': response_json["Date"],
+            'startTime': response_json["startTime"],
+            'GeofenceActive': response_json["GeofenceActive"],
+            'Flightplan': flightplan_id_ground,
+            'NumPics': response_json["NumPics"],
+            'Pictures': response_json["Pictures"],
+            'NumVids': response_json["NumVids"],
+            'Videos': response_json["Videos"]
+        }
+        data = json.dumps(dataFlight)
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post('http://147.83.249.79:8105/add_flight', data=data, headers=headers)
+        internal_client.publish("autopilotService/cameraService/saveMediaApi", flight_id)
 
 def executeFlightPlan2(waypoints_json):
     global vehicle
@@ -434,6 +423,7 @@ def process_message(message, client):
     global sending_topic
     global state
     global flight_id
+    global flightplan_id_ground
     global waypointImage
     global waypointStartVideo
     global waypointEndVideo
@@ -459,13 +449,8 @@ def process_message(message, client):
 
             if op_mode == 'simulation':
                 connection_string = "tcp:127.0.0.1:5763"
-                # vehicle = connect(connection_string, wait_ready=False, baud=115200)
-                # vehicle.wait_ready(True, timeout=5000)
             else:
                 connection_string = "/dev/ttyS0"
-                #vehicle = connect("/dev/ttyS0", wait_ready=False, baud=115200)
-                # vehicle = connect(connection_string, wait_ready=False, baud=115200)
-                # vehicle.wait_ready(True, timeout=5000)
 
             # vehicle = connect(connection_string, wait_ready=False, baud=57600)
             vehicle = connect(connection_string, wait_ready=False, baud=115200)
@@ -535,22 +520,17 @@ def process_message(message, client):
         message = json.loads(message.payload.decode("utf-8"))
         flightplan_id_ground = message["id"]
         waypoints_json = message["waypoints"]
-        #waypoints_json = str(message.payload.decode("utf-8"))
         flight_id = splited[3]
-        w = threading.Thread(target=executeFlightPlan, args=[waypoints_json, flight_id, flightplan_id_ground, "dashboard"])
+        w = threading.Thread(target=executeFlightPlan, args=[waypoints_json, "dashboard"])
         w.start()
 
     if command == 'executeFlightPlanMobileApp':
         message = json.loads(message.payload.decode("utf-8"))
         title = message["Title"]
-        ### Hay que revisar como permitir que trabajando desde el móvil, el autopiloto pueda recibir el id de vuelo ###
         response = requests.get('http://147.83.249.79:8105/get_flight_plan_id/' + title).json()
         flightplan_id_ground = response["id"]
         waypoints = message["waypoints"]
         headers = {'Content-Type': 'application/json'}
-        # print("Sending data:", data)
-        # url = 'http://192.168.208.6:9000/get_flight_plan/' + title_flightplan
-        #response_json = requests.get('http://147.83.249.79:8105/get_flight_plan/' + flightplan_id_ground).json()
         response = requests.get('http://192.168.208.6:9000/get_flight_plan/' + title).json()
         flightplan_id_drone = response["_id"]
         numPictures = len(response["PicsWaypoints"])
@@ -561,11 +541,11 @@ def process_message(message, client):
             "NumPics": numPictures,
             "NumVids": numVideos
         }
-        # headers = {'Content-Type': 'application/json'}
         response_air = requests.post('http://192.168.208.6:9000/add_flight', json=data, headers=headers)
         flight_id = response_air.json()["id"]
 
         # op_mode = 'production'
+        # En el caso de estar haciendo pruebas en local, en el ordenador, cambiar el op_mode a simulation
         op_mode = 'simulation'
         if state == 'disconnected':
             print("Autopilot service connected by " + origin)
@@ -583,7 +563,7 @@ def process_message(message, client):
             state = 'connected'
             print('Changed state to connected')
 
-            # external_client.publish(sending_topic + "/connected", json.dumps(get_telemetry_info()))
+            external_client.publish("autopilotService/mobileApp/connectedAutopilot")
 
             sending_telemetry_info = True
             y = threading.Thread(target=send_telemetry_info)
@@ -591,7 +571,7 @@ def process_message(message, client):
         else:
             print('Autopilot already connected')
 
-        w = threading.Thread(target=executeFlightPlan, args=[waypoints, flight_id, flightplan_id_ground, "mobileApp"])
+        w = threading.Thread(target=executeFlightPlan, args=[waypoints, "mobileApp"])
         w.start()
 
 
@@ -607,7 +587,6 @@ def process_message(message, client):
             "lonImage": lonWaypointStart
         }
         response = requests.put('http://192.168.208.6:9000/add_picture', json=data, headers=headers)
-        #response = requests.put('http://127.0.0.1:9000/add_picture', json=data, headers=headers)
 
     if command == 'savePictureInterval':
         name_picture = message.payload.decode("utf-8")
@@ -619,7 +598,6 @@ def process_message(message, client):
             "waypoint": -1
         }
         response = requests.put('http://192.168.208.6:9000/add_picture', json=data, headers=headers)
-        #response = requests.put('http://127.0.0.1:9000/add_picture', json=data, headers=headers)
 
     if command == 'saveVideo':
         name_video = message.payload.decode("utf-8")
@@ -636,7 +614,24 @@ def process_message(message, client):
             "lonEnd": lonWaypointEnd
         }
         response = requests.put('http://192.168.208.6:9000/add_video', json=data, headers=headers)
-        #response = requests.put('http://127.0.0.1:9000/add_video', json=data, headers=headers)
+
+    if command == 'saveMediaApi':
+        print("Asking the camera to send the media to the api")
+        response_json = requests.get('http://192.168.208.6:9000/get_flight/' + flight_id).json()
+        dataFlight = {
+            'Date': response_json["Date"],
+            'startTime': response_json["startTime"],
+            'GeofenceActive': response_json["GeofenceActive"],
+            'Flightplan': flightplan_id_ground,
+            'NumPics': response_json["NumPics"],
+            'Pictures': response_json["Pictures"],
+            'NumVids': response_json["NumVids"],
+            'Videos': response_json["Videos"]
+        }
+        data = json.dumps(dataFlight)
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post('http://147.83.249.79:8105/add_flight', data=data, headers=headers)
+        internal_client.publish("autopilotService/cameraService/saveMediaApi", flight_id)
 
     if command == 'videoFrameWithColor':
         # ya se está moviendo. Solo entonces hacemos caso de los colores
