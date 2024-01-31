@@ -8,11 +8,8 @@ import paho.mqtt.client as mqtt
 import base64
 import threading
 import time
-#import pymongo
 import random
 import string
-#import json
-#from matplotlib.patches import Circle
 import requests
 
 def generate_random_number(length):
@@ -62,21 +59,6 @@ def process_message(message, client):
         _, image_buffer = cv.imencode('.jpg', frame)
         jpg_as_text = base64.b64encode(image_buffer)
 
-        # Finding the order of the last image added, to know the order of the new one
-        #image_exists = images.find_one({'Order': '1'})
-        #if image_exists == None:
-        #    number_image = '1'
-        #else:
-        #    last_image = images.find().sort([('Order', pymongo.DESCENDING)]).limit(1)[0]
-        #    last_number = last_image['Order']
-        #    number_image = str(int(last_number) + 1)
-        # Adding the image to MongoDB
-        #images.insert_one({'Order': number_image, 'Image': jpg_as_text})
-        # Searching a certain image, which will be the one sent to the Dashboard
-        #image = images.find_one({'Order': number_image})
-        #image_db_as_text = image['Image']
-        #client.publish("cameraService/" + origin + "/picture", image_db_as_text)
-
         # Sending image to Dashboard
         client.publish("cameraService/" + origin + "/picture", jpg_as_text)
 
@@ -103,18 +85,13 @@ def process_message(message, client):
             # this loop is required to discard first frames
             ret, frame = cap.read()
         _, image_buffer = cv.imencode('.jpg', frame)
-        #jpg_as_text = base64.b64encode(image_buffer)
         if ret:
             random_number = generate_random_number(3)
             random_name = "picture_" + random_number + ".jpg"
             route = 'Pictures/' + random_name
             # Guardar imagen provisionalmente
             cv.imwrite(route, frame)
-            #cv.imwrite(route, frame)
-            # Queda enviar el nombre de la foto al flightplan en la base de datos
             internal_client.publish(origin + "/autopilotService/savePicture", random_name)
-
-        #client.publish(origin + "/autopilotService/savePicture/" + name_flightplan, random_name)
 
     if command == "takePictureInterval":
         print("Take picture by interval")
@@ -128,11 +105,9 @@ def process_message(message, client):
             random_number = generate_random_number(3)
             random_name = "pictureInterval_" + random_number + ".jpg"
             route = 'Pictures/' + random_name
-            # Guardar imagen provisionalmente
             cv.imwrite(route, frame)
             internal_client.publish(origin + "/autopilotService/savePictureInterval", random_name)
 
-        #client.publish(origin + "/autopilotService/savePicture/" + name_flightplan, random_name)
 
     if command == "startVideoMoving":
         def start_recording():
@@ -171,31 +146,13 @@ def process_message(message, client):
             while time.time() - start_time < duration:
                 ret, frame = cap.read()
                 output_video.write(frame)
-            #cap.release()
             output_video.release()
             print("Video estático grabado")
             internal_client.publish(origin + "/autopilotService/saveVideo", random_name)
             # shutil.move(random_name, "/Videos/" + random_name)
         recording_thread = threading.Thread(target=start_recording_static_video(durationVideo))
         recording_thread.start()
-    """
-    if command == "getResultFlight":
-        flight_id = message.payload.decode("utf-8")
-        #response_json = requests.get('http://192.168.208.6:9000/get_results_flight/' + flight_id).json()
-        response_json = requests.get('http://127.0.0.1:9000/get_results_flight/' + flight_id).json()
-        pictures = response_json["Pictures"]
-        for picture in pictures[0:]:
-            image_path = 'Pictures/' + picture["namePicture"]
-            with open(image_path, 'rb') as file:
-                image_buffer = file.read()
-            external_client.publish("cameraService/dashBoard/resultFlightPicture/"+picture["namePicture"], image_buffer)
-        videos = response_json["Videos"]
-        for video in videos[0:]:
-            video_path = 'Videos/' + video["nameVideo"]
-            with open(video_path, 'rb') as file:
-                video_buffer = file.read()
-            external_client.publish("cameraService/dashBoard/resultFlightVideo/"+video["nameVideo"], video_buffer)
-    """
+
     if command == "saveMediaApi":
         flight_id = message.payload.decode("utf-8")
         response_json = requests.get('http://192.168.208.6:9000/get_results_flight/' + flight_id).json()
@@ -206,7 +163,6 @@ def process_message(message, client):
             print(f"Buscando picture: {image_path}")
             with open(image_path, 'rb') as file:
                 image_buffer = file.read()
-            #requests.post(f"http://127.0.0.1:9000/save_picture/{picture_name}", image_buffer)
             requests.post(f"http://147.83.249.79:8105/save_picture/{picture_name}", image_buffer)
         videos = response_json["Videos"]
         for video in videos[0:]:
@@ -215,9 +171,7 @@ def process_message(message, client):
             print(f"Buscando video: {video_path}")
             with open(video_path, 'rb') as file:
                 video_buffer = file.read()
-            #requests.post(f"http://127.0.0.1:9000/save_video/{video_name}", video_buffer)
             requests.post(f"http://147.83.249.79:8105/save_video/{video_name}", video_buffer)
-            #external_client.publish("cameraService/dashBoard/resultFlightVideo/" + video["nameVideo"], video_buffer)
 
 
 def on_internal_message(client, userdata, message):
@@ -237,18 +191,10 @@ def CameraService (connection_mode, operation_mode, external_broker, username, p
     global internal_client
     global state
     global cap
-    #global images
-
 
     sending_video_stream = False
 
     cap = cv.VideoCapture(0)  # video capture source camera (Here webcam of lap>
-
-    # Register and creation of the MongoDB database for the pictures taken
-    #clientMongo = pymongo.MongoClient('mongodb://root:droneseetac@localhost:27017/')
-    # clientMongo = pymongo.MongoClient('mongodb://root:droneseetac@192.168.208.5:27017/')
-    #db = clientMongo['images']
-    #images = db['images']
 
     print ('Camera ready')
 
@@ -259,7 +205,7 @@ def CameraService (connection_mode, operation_mode, external_broker, username, p
     # The internal broker is always (global or local mode) at localhost:1884
     internal_broker_address = '192.168.208.2'
     #internal_broker_address = 'localhost'
-    #internal_broker_address = 'localhost' # Means localhost, as it's the direction of mosquitto
+
     internal_broker_port = 1884
 
 

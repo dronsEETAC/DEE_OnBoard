@@ -35,9 +35,7 @@ pymavlink==2.4.35
 dronekit==2.9.2
 
 #Leds Requirements
-#neopixel==0.0.1
 RPi.GPIO-def==0.2
-#PyAudio==0.2.13
 scipy==1.7.3
 
 #BBDD Requirements
