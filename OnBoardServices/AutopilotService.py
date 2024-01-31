@@ -544,9 +544,9 @@ def process_message(message, client):
         response_air = requests.post('http://192.168.208.6:9000/add_flight', json=data, headers=headers)
         flight_id = response_air.json()["id"]
 
-        # op_mode = 'production'
+        op_mode = 'production'
         # En el caso de estar haciendo pruebas en local, en el ordenador, cambiar el op_mode a simulation
-        op_mode = 'simulation'
+        # op_mode = 'simulation'
         if state == 'disconnected':
             print("Autopilot service connected by " + origin)
 
