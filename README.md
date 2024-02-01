@@ -25,7 +25,7 @@ Each of the modules in this block has a GitHub repo where you can find the code 
 [![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-Monitor-brightgreen.svg)](https://github.com/dronsEETAC/MonitorDEE) records on board data for future analysis (for instance, all the messages send through the brokers.
 
 * *Air Backend*:
-[![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-Monitor-brightgreen.svg)](https://github.com/JordiLlaveria/AirAPIRESTDEE) saves flight information while the drone is executing a planned flight
+[![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-AirBackend-brightgreen.svg)](https://github.com/JordiLlaveria/AirAPIRESTDEE) saves flight information while the drone is executing a planned flight
 
 ## Installations
 
