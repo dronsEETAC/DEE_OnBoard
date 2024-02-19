@@ -104,6 +104,9 @@ The following PDF file was developed with the intention of being a quick guide t
 
 [DockerDocumentation.pdf](https://github.com/JordiLlaveria/OnBoardServicesDEE/blob/manager/DockerIntroduction.pdf)
 
+This is a video tutorial on Docker for en DEE: [![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-video_tutorial_docker-pink.svg)](https://www.youtube.com/playlist?list=PLyAtSQhMsD4oEZIui7W1NN0lEU1pUmxYg)
+
+    
 ## Deploying the containers
 
 When all these three images are created, and we will suppose that these processes are going to be executed inside de RPi with both Docker and Docker Compose tools downloaded, following the previous documentation, it's time to deploy the corresponding containers, to be able to use the services all of them contain.
