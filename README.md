@@ -125,3 +125,17 @@ Despite that, and to be able to deal with the usage and Docker, the following in
 - docker compose stop: stops all the containers
 - docker compose down: stops and eliminates all the containers collected inside a Docker Compose file
 - docker ps -a: show all the containers created, either in "UP" or "DOWN" state
+
+       
+## Starting on-board services
+When operating in production mode, the on-board services must be run in the on-board computer.   
+In this repo you will find a python script (boot.py) that can be used to that purpose. 
+All on-board services and boot.py must be downloaded in the on-board computer and the requirements must be installed. Of course, the mosquitto broker must also be running on-board. 
+The services can be started with this command:
+```
+sudo python3 boot.py parameters
+```
+The boot script will detect if there is internet coverage. If not, the green led will keep fixed and all the services will be started in local and production modes.  
+If there is internet coverage then the user can select the communication model: green led indicates local mode and blue led color indicates global mode. The user can change the mode with the on board-button. If the button is not pressed during 20 seconds the led will keep fixed, the communication mode will be selected and the services will start accordingly.    
+If you are planning to work in global mode you must provide one addicional parameter to the boot.py script. This parameter is the broker that must be used as external broker (either 'broker.hivemq.com' or 'classpip.upc.edu'). In case you choose the second option then you must provide two additional parameters: username and password.
+
