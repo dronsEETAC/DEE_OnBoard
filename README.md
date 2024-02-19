@@ -35,9 +35,9 @@ In order to run and contribute you must install Python 3.7. We recommend PyCharm
 Contributions must follow the contribution protocol that you will find in the main repo of the Drone Engineering Ecosystem.
 [![DroneEngineeringEcosystem Badge](https://img.shields.io/badge/DEE-MainRepo-brightgreen.svg)](https://github.com/dronsEETAC/DroneEngineeringEcosystemDEE)
 
-To be able to create Docker images and upload them to Docker Hub, Docker Desktop needs to be downloaded, and an account in Docker Hub needs to be created:
-- [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [Create account in Docker Hub](https://hub.docker.com/)
+On board modules can be installed and run one-by-one in a laptop or in the RPi. See instructions for this bellow.   
+On the other hand, since intallation one-by-one can be long and tedious, modules are installed in a Docker image so that installation in a RPi is very easy. Bellow you will find supporting material to learn about Docker, how to install a Docker image and how to create a new Docker image in case of changes in some of the services.   
+
 
 ## Operation modes
 All services in this block can be run in simulation mode and also in production mode. To use the service in simulation mode, clone the repo in your computer and install de requirements. Be also sure that you have running the internal broker at "localhost:1884". When running the service you must specify the communication and operation mode and also which broker must be used as external broker. To do that you must edit the run/debug configuration in PyCharm, as shown in the image, in order to pass the required arguments to the script implementing the service. At least two parameters are required: connection_mode (global or local) and operation_mode (simulation or production). In case of global communication mode, a third argument is requiered indicating the external broker to be used. The different options for ths third argument are shown in this table:
@@ -54,7 +54,23 @@ localhost_cert | localhost:8883 with secure websockets
 In case the external broker requieres credentials, two additional parameters must be includes (username and password). The figure shows and example where the external broker does not requires credentials.   
 ![runConfig](https://github.com/dronsEETAC/DEE_OnBoard/assets/100842082/09c20edf-552f-436a-87bd-90192d75a299)
 
+       
+## Installing on-board services one-y-one
+When operating in production mode, the on-board services must be run in the on-board computer. A first option is to install one-by-one together with its dependences. Then, the services can be run using a python script (boot.py) that can be found in this repo. 
+All on-board services and boot.py must be downloaded in the on-board computer and the requirements must be installed. Of course, the mosquitto broker must also be running on-board. 
+The services can be started with this command:
+```
+sudo python3 boot.py parameters
+```
+The boot script will detect if there is internet coverage. If not, the green led will keep fixed and all the services will be started in local and production modes.  
+If there is internet coverage then the user can select the communication model: green led indicates local mode and blue led color indicates global mode. The user can change the mode with the on board-button. If the button is not pressed during 20 seconds the led will keep fixed, the communication mode will be selected and the services will start accordingly.    
+If you are planning to work in global mode you must provide one addicional parameter to the boot.py script. This parameter is the broker that must be used as external broker (either 'broker.hivemq.com' or 'classpip.upc.edu'). In case you choose the second option then you must provide two additional parameters: username and password.
+
+
 ## Docker
+To be able to create Docker images and upload them to Docker Hub, Docker Desktop needs to be downloaded, and an account in Docker Hub needs to be created:
+- [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Create account in Docker Hub](https://hub.docker.com/)
 
 The usage of Docker in the case of the administration of onboard services can be seen as complex at the first time, but the structure which is followed is the easiest one at the time of executing the different containers and communicating with all of them.
 
@@ -72,7 +88,7 @@ The case where several changes need to be made is in the first image, the one th
 2. AutopilotService.py file from the Autopilot Service repository
 3. CameraService.py file from the Camera Service repository
 4. LEDsService.py file from the LEDs Service repository
-5. boot.py file from the DroneEngineeringEcosystem repository: [DEE repository](https://github.com/dronsEETAC/DroneEngineeringEcosystemDEE)
+5. boot.py file from this repository
 
 Once all these files are collected into a single directory and each one of them is downloaded from their corresponding repository, they have the correct organization to create the image of services which involves all of them, following instructions which will be detailed in the next chapter.
 
@@ -129,16 +145,4 @@ Despite that, and to be able to deal with the usage and Docker, the following in
 - docker compose down: stops and eliminates all the containers collected inside a Docker Compose file
 - docker ps -a: show all the containers created, either in "UP" or "DOWN" state
 
-       
-## Starting on-board services
-When operating in production mode, the on-board services must be run in the on-board computer.   
-In this repo you will find a python script (boot.py) that can be used to that purpose. 
-All on-board services and boot.py must be downloaded in the on-board computer and the requirements must be installed. Of course, the mosquitto broker must also be running on-board. 
-The services can be started with this command:
-```
-sudo python3 boot.py parameters
-```
-The boot script will detect if there is internet coverage. If not, the green led will keep fixed and all the services will be started in local and production modes.  
-If there is internet coverage then the user can select the communication model: green led indicates local mode and blue led color indicates global mode. The user can change the mode with the on board-button. If the button is not pressed during 20 seconds the led will keep fixed, the communication mode will be selected and the services will start accordingly.    
-If you are planning to work in global mode you must provide one addicional parameter to the boot.py script. This parameter is the broker that must be used as external broker (either 'broker.hivemq.com' or 'classpip.upc.edu'). In case you choose the second option then you must provide two additional parameters: username and password.
 
