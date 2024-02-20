@@ -55,7 +55,7 @@ In case the external broker requieres credentials, two additional parameters mus
 ![runConfig](https://github.com/dronsEETAC/DEE_OnBoard/assets/100842082/09c20edf-552f-436a-87bd-90192d75a299)
 
        
-## Installing on-board services one-y-one
+## Installing on-board services one-by-one
 When operating in production mode, the on-board services must be run in the on-board computer. A first option is to install one-by-one together with its dependences. Then, the services can be run using a python script (boot.py) that can be found in this repo. 
 All on-board services and boot.py must be downloaded in the on-board computer and the requirements must be installed. Of course, the mosquitto broker must also be running on-board. 
 The services can be started with this command:
